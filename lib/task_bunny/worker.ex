@@ -73,7 +73,7 @@ defmodule TaskBunny.Worker do
   @doc false
   @spec init(t) :: {:ok, t} | {:stop, :connection_not_ready}
   def init(state = %Worker{}) do
-    Logger.info(log_msg("initializing", state))
+    Logger.debug(log_msg("initializing", state))
 
     case Connection.subscribe_connection(state.host, self()) do
       :ok ->
@@ -90,7 +90,7 @@ defmodule TaskBunny.Worker do
   @doc false
   @spec terminate(any, TaskBunny.Worker.t()) :: :normal
   def terminate(_reason, state) do
-    Logger.info(log_msg("terminating", state))
+    Logger.debug(log_msg("terminating", state))
 
     if state.channel do
       AMQP.Channel.close(state.channel)
@@ -116,11 +116,11 @@ defmodule TaskBunny.Worker do
 
   def handle_info({:stop_consumer}, state = %Worker{}) do
     if state.channel && state.consumer_tag do
-      Logger.info(log_msg("stop consuming", state))
+      Logger.debug(log_msg("stop consuming", state))
       Consumer.cancel(state.channel, state.consumer_tag)
       {:noreply, %{state | consumer_tag: nil}}
     else
-      Logger.info(log_msg("received :stop_consumer but already stopped", state))
+      Logger.debug(log_msg("received :stop_consumer but already stopped", state))
       {:noreply, state}
     end
   end
@@ -134,7 +134,7 @@ defmodule TaskBunny.Worker do
     # Consumes the queue
     case Consumer.consume(connection, state.queue, state.concurrency) do
       {:ok, channel, consumer_tag} ->
-        Logger.info(log_msg("start consuming", state))
+        Logger.debug(log_msg("start consuming", state))
         {:noreply, %{state | channel: channel, consumer_tag: consumer_tag}}
 
       {:error, error} ->
